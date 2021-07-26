@@ -246,7 +246,7 @@ else()
   elseif(NOT EMSCRIPTEN)
     add_compile_flag("-fPIC")
   endif()
-  add_debug_compile_flag("-O0")
+  add_debug_compile_flag("-O2")
   add_debug_compile_flag("-g3")
   if(EMSCRIPTEN)
     # really focus on minimizing output size when compiling sources
@@ -329,14 +329,31 @@ else()
   message(STATUS "Building libbinaryen as shared library.")
   add_library(binaryen SHARED ${binaryen_SOURCES} ${binaryen_objs})
 endif()
+target_include_directories(binaryen INTERFACE
+  $<INSTALL_INTERFACE:include/binaryen>
+  )
 if(NOT (BUILD_STATIC_LIB AND BYN_INSTALL_TOOLS_ONLY))
   install(TARGETS binaryen
+    EXPORT binaryenConfig
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(
+    EXPORT binaryenConfig
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/binaryen
+    NAMESPACE binaryen::
+    )
 endif()
 if(NOT BYN_INSTALL_TOOLS_ONLY)
-  install(FILES src/binaryen-c.h src/wasm-delegations.def DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(FILES
+    src/binaryen-c.h
+    src/wasm-delegations.def
+    src/wasm-delegations-fields.def
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/binaryen)
+  install(DIRECTORY src/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/binaryen  # set scoping for headers
+    FILES_MATCHING PATTERN "*.h"
+    )
 endif()
 
 function(binaryen_add_executable name sources)
@@ -349,16 +366,19 @@ function(binaryen_add_executable name sources)
   install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endfunction()
 
-binaryen_add_executable(wasm-opt src/tools/wasm-opt.cpp)
-binaryen_add_executable(wasm-shell src/tools/wasm-shell.cpp)
-binaryen_add_executable(wasm-metadce src/tools/wasm-metadce.cpp)
-binaryen_add_executable(wasm2js src/tools/wasm2js.cpp)
-binaryen_add_executable(wasm-emscripten-finalize src/tools/wasm-emscripten-finalize.cpp)
-binaryen_add_executable(wasm-as src/tools/wasm-as.cpp)
-binaryen_add_executable(wasm-dis src/tools/wasm-dis.cpp)
-binaryen_add_executable(wasm-ctor-eval src/tools/wasm-ctor-eval.cpp)
-binaryen_add_executable(wasm-reduce src/tools/wasm-reduce.cpp)
-binaryen_add_executable(wasm-split src/tools/wasm-split.cpp)
+OPTION(BUILD_TOOLS      "Build tools"               OFF)
+if(BUILD_TOOLS)
+  binaryen_add_executable(wasm-opt src/tools/wasm-opt.cpp)
+  binaryen_add_executable(wasm-shell src/tools/wasm-shell.cpp)
+  binaryen_add_executable(wasm-metadce src/tools/wasm-metadce.cpp)
+  binaryen_add_executable(wasm2js src/tools/wasm2js.cpp)
+  binaryen_add_executable(wasm-emscripten-finalize src/tools/wasm-emscripten-finalize.cpp)
+  binaryen_add_executable(wasm-as src/tools/wasm-as.cpp)
+  binaryen_add_executable(wasm-dis src/tools/wasm-dis.cpp)
+  binaryen_add_executable(wasm-ctor-eval src/tools/wasm-ctor-eval.cpp)
+  binaryen_add_executable(wasm-reduce src/tools/wasm-reduce.cpp)
+  binaryen_add_executable(wasm-split src/tools/wasm-split.cpp)
+endif()
 
 
 # binaryen.js

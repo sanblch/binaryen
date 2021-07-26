@@ -99,7 +99,7 @@ struct FeatureSet {
   operator uint32_t() const { return features; }
 
   bool isMVP() const { return features == MVP; }
-  bool has(FeatureSet f) { return (features & f) == f; }
+  bool has(FeatureSet f) { return (features & f) == static_cast<uint32_t>(f); }
   bool hasAtomics() const { return (features & Atomics) != 0; }
   bool hasMutableGlobals() const { return (features & MutableGlobals) != 0; }
   bool hasTruncSat() const { return (features & TruncSat) != 0; }
